@@ -7,7 +7,7 @@ public class RuleChecker {
     }
 
     public static boolean isUnrealisticSalary(double salary) {
-        return salary > 1000000; // unrealistic threshold
+        return salary > 1000000; 
     }
 
     public static boolean hasSuspiciousWords(String desc) {
