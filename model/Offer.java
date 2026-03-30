@@ -1,6 +1,6 @@
 package model;
 
-// Base abstract class
+
 public abstract class Offer {
     private String companyName;
     private String email;
@@ -16,13 +16,12 @@ public abstract class Offer {
         this.hasFee = hasFee;
     }
 
-    // getters
+    
     public String getCompanyName() { return companyName; }
     public String getEmail() { return email; }
     public double getSalary() { return salary; }
     public String getDescription() { return description; }
     public boolean hasFee() { return hasFee; }
 
-    // polymorphic method
     public abstract int verifyOffer();
 }

@@ -15,10 +15,16 @@ public class MainApp {
                 true
         );
 
-        int score = offer.verifyOffer();
-        String result = VerificationEngine.classify(score);
+        VerificationResult result = VerificationEngine.evaluateDetailed(
+            offer,
+            true,
+            false,
+            "Software Engineer",
+            "Job Offer"
+        );
 
-        System.out.println("Risk Score: " + score);
-        System.out.println("Result: " + result);
+        System.out.println("Risk Score: " + result.getRiskScore());
+        System.out.println("NLP Score: " + result.getNlpRisk());
+        System.out.println("Result: " + result.getVerdict());
     }
 }

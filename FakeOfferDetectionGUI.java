@@ -6,6 +6,12 @@ import java.awt.geom.*;
 import java.awt.image.BufferedImage;
 import java.util.*;
 
+import model.InternshipOffer;
+import model.JobOffer;
+import model.Offer;
+import model.VerificationResult;
+import service.VerificationEngine;
+
 /**
  * Fake Internship / Job Offer Detection System
  * Team: JVM Juggernauts (JAVA-IV-T062)
@@ -14,17 +20,22 @@ import java.util.*;
 public class FakeOfferDetectionGUI extends JFrame {
 
     // ── Color Palette ──────────────────────────────────────────────
-    private static final Color BG_DARK       = new Color(10, 14, 26);
-    private static final Color BG_CARD       = new Color(18, 24, 40);
-    private static final Color BG_INPUT      = new Color(24, 32, 52);
-    private static final Color ACCENT_BLUE   = new Color(56, 139, 253);
-    private static final Color ACCENT_CYAN   = new Color(0, 212, 255);
-    private static final Color TEXT_PRIMARY  = new Color(230, 237, 243);
-    private static final Color TEXT_MUTED    = new Color(139, 148, 158);
-    private static final Color BORDER_COLOR  = new Color(48, 58, 82);
+    private static final Color BG_DARK       = new Color(247, 238, 224);
+    private static final Color BG_CARD       = new Color(255, 252, 246);
+    private static final Color BG_INPUT      = new Color(253, 247, 237);
+    private static final Color ACCENT_BLUE   = new Color(15, 112, 99);
+    private static final Color ACCENT_CYAN   = new Color(28, 151, 131);
+    private static final Color ACCENT_GOLD   = new Color(222, 142, 62);
+    private static final Color TEXT_PRIMARY  = new Color(47, 49, 46);
+    private static final Color TEXT_MUTED    = new Color(108, 103, 96);
+    private static final Color BORDER_COLOR  = new Color(214, 198, 176);
     private static final Color GENUINE_COLOR = new Color(35, 197, 94);
     private static final Color SUSPICIOUS_COLOR = new Color(255, 179, 0);
     private static final Color FAKE_COLOR    = new Color(248, 81, 73);
+
+    private static final Font FONT_TITLE = new Font("Georgia", Font.BOLD, 31);
+    private static final Font FONT_HEADING = new Font("Trebuchet MS", Font.BOLD, 16);
+    private static final Font FONT_BODY = new Font("Trebuchet MS", Font.PLAIN, 13);
 
     // ── Form fields ────────────────────────────────────────────────
     private JTextField companyField, emailField, salaryField, positionField;
@@ -41,7 +52,7 @@ public class FakeOfferDetectionGUI extends JFrame {
     public FakeOfferDetectionGUI() {
         setTitle("Fake Internship / Job Offer Detection System  ·  JVM Juggernauts");
         setDefaultCloseOperation(EXIT_ON_CLOSE);
-        setSize(980, 760);
+        setSize(1080, 780);
         setLocationRelativeTo(null);
         setResizable(true);
 
@@ -73,11 +84,11 @@ public class FakeOfferDetectionGUI extends JFrame {
         titleText.setOpaque(false);
 
         JLabel title = new JLabel("Fake Offer Detector");
-        title.setFont(new Font("Segoe UI", Font.BOLD, 26));
+        title.setFont(FONT_TITLE);
         title.setForeground(TEXT_PRIMARY);
 
-        JLabel subtitle = new JLabel("Fake Internship & Job Offer Detection System  ·  TCS-408  ·  JVM Juggernauts");
-        subtitle.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        JLabel subtitle = new JLabel("A quick authenticity check for internship and job offers");
+        subtitle.setFont(FONT_BODY.deriveFont(12f));
         subtitle.setForeground(TEXT_MUTED);
 
         titleText.add(title);
@@ -88,8 +99,8 @@ public class FakeOfferDetectionGUI extends JFrame {
         header.add(titleRow, BorderLayout.WEST);
 
         // team badge
-        JLabel badge = new RoundedLabel("  JAVA-IV-T062  ", ACCENT_BLUE, 10);
-        badge.setFont(new Font("Segoe UI", Font.BOLD, 11));
+        JLabel badge = new RoundedLabel("  JAVA-IV-T062  ", ACCENT_GOLD, 10);
+        badge.setFont(FONT_BODY.deriveFont(Font.BOLD, 11f));
         badge.setForeground(Color.WHITE);
         header.add(badge, BorderLayout.EAST);
 
@@ -138,7 +149,7 @@ public class FakeOfferDetectionGUI extends JFrame {
         card.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
         JLabel cardTitle = new JLabel("  Enter Offer Details");
-        cardTitle.setFont(new Font("Segoe UI", Font.BOLD, 15));
+        cardTitle.setFont(FONT_HEADING);
         cardTitle.setForeground(ACCENT_CYAN);
         cardTitle.setBorder(BorderFactory.createEmptyBorder(0, 0, 14, 0));
         card.add(cardTitle, BorderLayout.NORTH);
@@ -176,7 +187,7 @@ public class FakeOfferDetectionGUI extends JFrame {
         descriptionArea = new JTextArea(4, 20);
         descriptionArea.setLineWrap(true);
         descriptionArea.setWrapStyleWord(true);
-        descriptionArea.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        descriptionArea.setFont(FONT_BODY);
         descriptionArea.setBackground(BG_INPUT);
         descriptionArea.setForeground(TEXT_PRIMARY);
         descriptionArea.setCaretColor(ACCENT_BLUE);
@@ -201,7 +212,7 @@ public class FakeOfferDetectionGUI extends JFrame {
         card.add(form, BorderLayout.CENTER);
 
         // Analyze Button
-        JButton analyzeBtn = new JButton("🔍  Analyze Offer") {
+        JButton analyzeBtn = new JButton("Analyze Offer") {
             { setContentAreaFilled(false); setOpaque(true); setFocusPainted(false); }
             protected void paintComponent(Graphics g2) {
                 Graphics2D g = (Graphics2D) g2;
@@ -212,7 +223,7 @@ public class FakeOfferDetectionGUI extends JFrame {
                 super.paintComponent(g2);
             }
         };
-        analyzeBtn.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        analyzeBtn.setFont(FONT_BODY.deriveFont(Font.BOLD, 14f));
         analyzeBtn.setForeground(Color.WHITE);
         analyzeBtn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         analyzeBtn.setPreferredSize(new Dimension(0, 44));
@@ -222,7 +233,7 @@ public class FakeOfferDetectionGUI extends JFrame {
         JButton clearBtn = new JButton("Clear") {
             { setContentAreaFilled(false); setOpaque(false); setFocusPainted(false); }
         };
-        clearBtn.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        clearBtn.setFont(FONT_BODY);
         clearBtn.setForeground(TEXT_MUTED);
         clearBtn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         clearBtn.setBorder(BorderFactory.createEmptyBorder(8, 16, 8, 16));
@@ -256,7 +267,7 @@ public class FakeOfferDetectionGUI extends JFrame {
         resultPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
         JLabel cardTitle = new JLabel("  Analysis Result");
-        cardTitle.setFont(new Font("Segoe UI", Font.BOLD, 15));
+        cardTitle.setFont(FONT_HEADING);
         cardTitle.setForeground(ACCENT_CYAN);
         cardTitle.setBorder(BorderFactory.createEmptyBorder(0, 0, 14, 0));
         resultPanel.add(cardTitle, BorderLayout.NORTH);
@@ -300,132 +311,65 @@ public class FakeOfferDetectionGUI extends JFrame {
         JPanel footer = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 6));
         footer.setOpaque(false);
         JLabel lbl = new JLabel("TCS-408 · JVM Juggernauts · Shanu Khatana · Disha Jha · Rakshit Sharma · Tanuja Kanswal");
-        lbl.setFont(new Font("Segoe UI", Font.PLAIN, 11));
-        lbl.setForeground(new Color(80, 90, 110));
+        lbl.setFont(FONT_BODY.deriveFont(11f));
+        lbl.setForeground(new Color(118, 106, 91));
         footer.add(lbl);
         return footer;
     }
 
     // ── Verification Engine ────────────────────────────────────────
     private void analyzeOffer() {
-        String company     = companyField.getText().trim();
-        String email       = emailField.getText().trim();
-        String salary      = salaryField.getText().trim();
-        String description = descriptionArea.getText().trim();
-        boolean requiresFee       = feeCheckBox.isSelected();
-        boolean usesUrgency       = urgencyCheckBox.isSelected();
-        boolean asksPersonalInfo  = personalInfoCheckBox.isSelected();
-        String offerType   = (String) offerTypeCombo.getSelectedItem();
+        String companyNameInput = companyField.getText().trim();
+        String senderEmailInput = emailField.getText().trim();
+        String salaryInput = salaryField.getText().trim();
+        String roleInput = positionField.getText().trim();
+        String descriptionInput = descriptionArea.getText().trim();
+        boolean feeRequested = feeCheckBox.isSelected();
+        boolean urgencyFlag = urgencyCheckBox.isSelected();
+        boolean personalInfoFlag = personalInfoCheckBox.isSelected();
+        String selectedOfferType = (String) offerTypeCombo.getSelectedItem();
 
-        if (company.isEmpty() || email.isEmpty()) {
+        if (companyNameInput.isEmpty() || senderEmailInput.isEmpty()) {
             JOptionPane.showMessageDialog(this,
                 "Please fill in at least Company Name and Sender Email.",
                 "Missing Information", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
-        // ── Risk scoring ──────────────────────────────────────────
-        int riskScore = 0;
-        java.util.List<String> findings = new ArrayList<>();
-
-        // 1. Email domain check
-        if (!email.contains("@") || email.endsWith("@gmail.com")
-                || email.endsWith("@yahoo.com") || email.endsWith("@hotmail.com")
-                || email.endsWith("@outlook.com") || email.endsWith("@rediffmail.com")) {
-            riskScore += 30;
-            findings.add("⚠  Sender uses a personal/free email domain (not a company domain).");
+        double monthlyPay = parseSalaryValue(salaryInput);
+        Offer offerDraft;
+        if (selectedOfferType != null && selectedOfferType.toLowerCase(Locale.ROOT).contains("intern")) {
+            offerDraft = new InternshipOffer(companyNameInput, senderEmailInput, monthlyPay, descriptionInput, feeRequested);
         } else {
-            findings.add("✔  Email domain appears to be a company domain.");
+            offerDraft = new JobOffer(companyNameInput, senderEmailInput, monthlyPay, descriptionInput, feeRequested);
         }
 
-        // 2. Fee requirement
-        if (requiresFee) {
-            riskScore += 40;
-            findings.add("🚨 Requires a registration or security fee — a major red flag!");
-        }
+        VerificationResult auditResult = VerificationEngine.evaluateDetailed(
+                offerDraft,
+                urgencyFlag,
+                personalInfoFlag,
+                roleInput,
+                selectedOfferType
+        );
 
-        // 3. Salary realism
-        if (!salary.isEmpty()) {
-            try {
-                double s = Double.parseDouble(salary.replaceAll("[^0-9.]", ""));
-                boolean isIntern = offerType.contains("Internship");
-                if (isIntern && s > 150000) {
-                    riskScore += 25;
-                    findings.add("⚠  Internship stipend (₹" + (int)s + "/mo) is unrealistically high.");
-                } else if (!isIntern && s > 500000) {
-                    riskScore += 25;
-                    findings.add("⚠  Salary (₹" + (int)s + "/mo) is unrealistically high for a fresh offer.");
-                } else if (s == 0) {
-                    findings.add("ℹ  No salary/stipend mentioned.");
-                } else {
-                    findings.add("✔  Salary/stipend appears to be in a realistic range.");
-                }
-            } catch (NumberFormatException ex) {
-                findings.add("ℹ  Could not parse salary value.");
-            }
-        }
-
-        // 4. Urgency / pressure language
-        if (usesUrgency) {
-            riskScore += 20;
-            findings.add("⚠  Uses urgent or pressure language (e.g., 'Reply within 24 hours').");
-        }
-
-        // 5. Personal information request
-        if (asksPersonalInfo) {
-            riskScore += 35;
-            findings.add("🚨 Requests sensitive personal info (Aadhaar / bank details / OTP) upfront.");
-        }
-
-        // 6. Keyword scan in description
-        String[] scamKeywords = {"urgent", "guaranteed", "work from home", "no experience",
-                "earn lakhs", "part time", "100% placement", "limited seats",
-                "act now", "free registration", "processing fee", "security deposit"};
-        int kwHits = 0;
-        String descLower = description.toLowerCase();
-        for (String kw : scamKeywords) {
-            if (descLower.contains(kw)) kwHits++;
-        }
-        if (kwHits >= 3) {
-            riskScore += 25;
-            findings.add("⚠  Job description contains " + kwHits + " suspicious keyword(s).");
-        } else if (kwHits > 0) {
-            riskScore += 10;
-            findings.add("ℹ  Job description contains " + kwHits + " mildly suspicious keyword(s).");
-        }
-
-        // 7. Company name check
-        if (company.length() < 3 || company.matches("[0-9]+")) {
-            riskScore += 15;
-            findings.add("⚠  Company name looks incomplete or suspicious.");
-        }
-
-        riskScore = Math.min(riskScore, 100);
-
-        // ── Classify ──────────────────────────────────────────────
-        String verdict;
-        Color  verdictColor;
-        String verdictIcon;
-        if (riskScore < 30) {
-            verdict = "GENUINE";
-            verdictColor = GENUINE_COLOR;
-            verdictIcon  = "✅";
-        } else if (riskScore < 65) {
-            verdict = "SUSPICIOUS";
-            verdictColor = SUSPICIOUS_COLOR;
-            verdictIcon  = "⚠️";
+        Color verdictTone;
+        String verdictGlyph;
+        if ("GENUINE".equals(auditResult.getVerdict())) {
+            verdictTone = GENUINE_COLOR;
+            verdictGlyph = "OK";
+        } else if ("SUSPICIOUS".equals(auditResult.getVerdict())) {
+            verdictTone = SUSPICIOUS_COLOR;
+            verdictGlyph = "!";
         } else {
-            verdict = "FAKE / SCAM";
-            verdictColor = FAKE_COLOR;
-            verdictIcon  = "🚨";
+            verdictTone = FAKE_COLOR;
+            verdictGlyph = "X";
         }
 
-        showResult(verdict, verdictColor, verdictIcon, riskScore, findings, offerType, company);
+        showResult(auditResult, verdictTone, verdictGlyph, selectedOfferType, companyNameInput);
     }
 
-    private void showResult(String verdict, Color color, String icon,
-                            int riskScore, java.util.List<String> findings,
-                            String type, String company) {
+    private void showResult(VerificationResult auditResult, Color toneColor, String verdictGlyph,
+                            String offerTypeText, String companyText) {
         resultPanel.remove(1);  // remove center component
 
         JPanel center = new JPanel();
@@ -437,10 +381,10 @@ public class FakeOfferDetectionGUI extends JFrame {
             protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g;
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                Color bg = new Color(color.getRed(), color.getGreen(), color.getBlue(), 28);
-                g2.setColor(bg);
+                Color badgeBg = new Color(toneColor.getRed(), toneColor.getGreen(), toneColor.getBlue(), 28);
+                g2.setColor(badgeBg);
                 g2.fillRoundRect(0, 0, getWidth(), getHeight(), 16, 16);
-                g2.setColor(new Color(color.getRed(), color.getGreen(), color.getBlue(), 80));
+                g2.setColor(new Color(toneColor.getRed(), toneColor.getGreen(), toneColor.getBlue(), 80));
                 g2.setStroke(new BasicStroke(1.5f));
                 g2.drawRoundRect(0, 0, getWidth()-1, getHeight()-1, 16, 16);
             }
@@ -452,13 +396,13 @@ public class FakeOfferDetectionGUI extends JFrame {
         vInner.setLayout(new BoxLayout(vInner, BoxLayout.Y_AXIS));
         vInner.setOpaque(false);
 
-        JLabel vIcon = new JLabel(icon);
-        vIcon.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 36));
+        JLabel vIcon = new JLabel(verdictGlyph);
+        vIcon.setFont(new Font("Trebuchet MS", Font.BOLD, 34));
         vIcon.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        JLabel vLabel = new JLabel(verdict);
-        vLabel.setFont(new Font("Segoe UI", Font.BOLD, 22));
-        vLabel.setForeground(color);
+        JLabel vLabel = new JLabel(auditResult.getVerdict());
+        vLabel.setFont(FONT_HEADING.deriveFont(Font.BOLD, 24f));
+        vLabel.setForeground(toneColor);
         vLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         vInner.add(vIcon);
@@ -467,66 +411,85 @@ public class FakeOfferDetectionGUI extends JFrame {
         verdictCard.add(vInner);
 
         // Risk score bar
-        JLabel riskLbl = new JLabel("Risk Score: " + riskScore + " / 100");
-        riskLbl.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        riskLbl.setForeground(color);
+        JLabel riskLbl = new JLabel("Overall Risk Score: " + auditResult.getRiskScore() + " / 100");
+        riskLbl.setFont(FONT_BODY.deriveFont(Font.BOLD, 13f));
+        riskLbl.setForeground(toneColor);
         riskLbl.setAlignmentX(Component.LEFT_ALIGNMENT);
         riskLbl.setBorder(BorderFactory.createEmptyBorder(14, 2, 4, 0));
 
-        JProgressBar bar = new JProgressBar(0, 100);
-        bar.setValue(riskScore);
-        bar.setStringPainted(false);
-        bar.setBackground(BG_INPUT);
-        bar.setForeground(color);
-        bar.setBorderPainted(false);
-        bar.setPreferredSize(new Dimension(0, 10));
-        bar.setMaximumSize(new Dimension(Integer.MAX_VALUE, 10));
-        bar.setAlignmentX(Component.LEFT_ALIGNMENT);
-        bar.setBorder(new RoundedBorder(BG_INPUT, 6));
+        JProgressBar riskMeter = new JProgressBar(0, 100);
+        riskMeter.setValue(auditResult.getRiskScore());
+        riskMeter.setStringPainted(false);
+        riskMeter.setBackground(BG_INPUT);
+        riskMeter.setForeground(toneColor);
+        riskMeter.setBorderPainted(false);
+        riskMeter.setPreferredSize(new Dimension(0, 10));
+        riskMeter.setMaximumSize(new Dimension(Integer.MAX_VALUE, 10));
+        riskMeter.setAlignmentX(Component.LEFT_ALIGNMENT);
+        riskMeter.setBorder(new RoundedBorder(BG_INPUT, 6));
+
+        JLabel nlpLabel = new JLabel("NLP Signal Score: " + auditResult.getNlpRisk() + " / 100");
+        nlpLabel.setFont(FONT_BODY.deriveFont(Font.BOLD, 12f));
+        nlpLabel.setForeground(TEXT_MUTED);
+        nlpLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        nlpLabel.setBorder(BorderFactory.createEmptyBorder(8, 2, 2, 0));
+
+        JProgressBar nlpMeter = new JProgressBar(0, 100);
+        nlpMeter.setValue(auditResult.getNlpRisk());
+        nlpMeter.setStringPainted(false);
+        nlpMeter.setBackground(BG_INPUT);
+        nlpMeter.setForeground(new Color(116, 95, 74));
+        nlpMeter.setBorderPainted(false);
+        nlpMeter.setPreferredSize(new Dimension(0, 8));
+        nlpMeter.setMaximumSize(new Dimension(Integer.MAX_VALUE, 8));
+        nlpMeter.setAlignmentX(Component.LEFT_ALIGNMENT);
+        nlpMeter.setBorder(new RoundedBorder(BG_INPUT, 6));
 
         // Context label
-        JLabel contextLbl = new JLabel(type + "  ·  " + company);
-        contextLbl.setFont(new Font("Segoe UI", Font.ITALIC, 12));
+        JLabel contextLbl = new JLabel(offerTypeText + "  ·  " + companyText);
+        contextLbl.setFont(FONT_BODY.deriveFont(Font.ITALIC, 12f));
         contextLbl.setForeground(TEXT_MUTED);
         contextLbl.setAlignmentX(Component.LEFT_ALIGNMENT);
         contextLbl.setBorder(BorderFactory.createEmptyBorder(10, 2, 6, 0));
 
         // Findings list
-        JLabel findingsTitle = new JLabel("Detailed Findings:");
-        findingsTitle.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        JLabel findingsTitle = new JLabel("Detailed Findings");
+        findingsTitle.setFont(FONT_BODY.deriveFont(Font.BOLD, 12f));
         findingsTitle.setForeground(TEXT_MUTED);
         findingsTitle.setAlignmentX(Component.LEFT_ALIGNMENT);
         findingsTitle.setBorder(BorderFactory.createEmptyBorder(0, 0, 6, 0));
 
-        JTextArea findingsArea = new JTextArea();
-        findingsArea.setEditable(false);
-        findingsArea.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        findingsArea.setBackground(BG_INPUT);
-        findingsArea.setForeground(TEXT_PRIMARY);
-        findingsArea.setLineWrap(true);
-        findingsArea.setWrapStyleWord(true);
-        findingsArea.setBorder(BorderFactory.createEmptyBorder(10, 12, 10, 12));
-        StringBuilder sb = new StringBuilder();
-        for (String f : findings) sb.append(f).append("\n\n");
-        findingsArea.setText(sb.toString().trim());
+        JTextArea notesArea = new JTextArea();
+        notesArea.setEditable(false);
+        notesArea.setFont(FONT_BODY.deriveFont(12f));
+        notesArea.setBackground(BG_INPUT);
+        notesArea.setForeground(TEXT_PRIMARY);
+        notesArea.setLineWrap(true);
+        notesArea.setWrapStyleWord(true);
+        notesArea.setBorder(BorderFactory.createEmptyBorder(10, 12, 10, 12));
+        StringBuilder detailsBuilder = new StringBuilder();
+        for (String line : auditResult.getFindings()) detailsBuilder.append("- ").append(line).append("\n\n");
+        notesArea.setText(detailsBuilder.toString().trim());
 
-        JScrollPane scroll = new JScrollPane(findingsArea);
-        scroll.setBorder(new RoundedBorder(BORDER_COLOR, 8));
-        scroll.setAlignmentX(Component.LEFT_ALIGNMENT);
-        scroll.setMaximumSize(new Dimension(Integer.MAX_VALUE, 200));
+        JScrollPane notesScrollPane = new JScrollPane(notesArea);
+        notesScrollPane.setBorder(new RoundedBorder(BORDER_COLOR, 8));
+        notesScrollPane.setAlignmentX(Component.LEFT_ALIGNMENT);
+        notesScrollPane.setMaximumSize(new Dimension(Integer.MAX_VALUE, 200));
 
         center.add(verdictCard);
         center.add(riskLbl);
-        center.add(bar);
+        center.add(riskMeter);
+        center.add(nlpLabel);
+        center.add(nlpMeter);
         center.add(contextLbl);
         center.add(findingsTitle);
-        center.add(scroll);
+        center.add(notesScrollPane);
 
         // New analysis button
         JButton newBtn = new JButton("+ Analyze Another Offer") {
             { setContentAreaFilled(false); setOpaque(false); setFocusPainted(false); }
         };
-        newBtn.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        newBtn.setFont(FONT_BODY.deriveFont(Font.BOLD, 12f));
         newBtn.setForeground(ACCENT_BLUE);
         newBtn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         newBtn.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -558,6 +521,21 @@ public class FakeOfferDetectionGUI extends JFrame {
         offerTypeCombo.setSelectedIndex(0);
     }
 
+    private double parseSalaryValue(String salaryText) {
+        if (salaryText == null || salaryText.trim().isEmpty()) {
+            return 0;
+        }
+        String normalized = salaryText.replaceAll("[^0-9.]", "");
+        if (normalized.isEmpty()) {
+            return 0;
+        }
+        try {
+            return Double.parseDouble(normalized);
+        } catch (NumberFormatException ex) {
+            return 0;
+        }
+    }
+
     // ── Styled component helpers ───────────────────────────────────
     private JTextField styledField(String placeholder) {
         JTextField f = new JTextField() {
@@ -565,13 +543,13 @@ public class FakeOfferDetectionGUI extends JFrame {
                 super.paintComponent(g);
                 if (getText().isEmpty() && !hasFocus()) {
                     Graphics2D g2 = (Graphics2D) g;
-                    g2.setColor(new Color(100, 110, 130));
+                    g2.setColor(new Color(148, 133, 113));
                     g2.setFont(getFont().deriveFont(Font.ITALIC));
                     g2.drawString(placeholder, 10, getHeight() / 2 + 5);
                 }
             }
         };
-        f.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        f.setFont(FONT_BODY);
         f.setBackground(BG_INPUT);
         f.setForeground(TEXT_PRIMARY);
         f.setCaretColor(ACCENT_BLUE);
@@ -583,7 +561,7 @@ public class FakeOfferDetectionGUI extends JFrame {
 
     private JComboBox<String> styledCombo(String[] items) {
         JComboBox<String> c = new JComboBox<>(items);
-        c.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        c.setFont(FONT_BODY);
         c.setBackground(BG_INPUT);
         c.setForeground(TEXT_PRIMARY);
         c.setBorder(new RoundedBorder(BORDER_COLOR, 8));
@@ -593,7 +571,7 @@ public class FakeOfferDetectionGUI extends JFrame {
 
     private JCheckBox styledCheck(String text) {
         JCheckBox cb = new JCheckBox(text);
-        cb.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        cb.setFont(FONT_BODY.deriveFont(12f));
         cb.setForeground(TEXT_PRIMARY);
         cb.setOpaque(false);
         cb.setFocusPainted(false);
@@ -611,7 +589,7 @@ public class FakeOfferDetectionGUI extends JFrame {
         g.setPaint(gp);
         g.fillPolygon(xp, yp, 6);
         g.setColor(Color.WHITE);
-        g.setFont(new Font("Segoe UI", Font.BOLD, size/2));
+        g.setFont(new Font("Georgia", Font.BOLD, size/2));
         FontMetrics fm = g.getFontMetrics();
         String ch = "✓";
         g.drawString(ch, (size - fm.stringWidth(ch))/2, size*3/5);
@@ -623,9 +601,13 @@ public class FakeOfferDetectionGUI extends JFrame {
     static class GradientPanel extends JPanel {
         protected void paintComponent(Graphics g) {
             Graphics2D g2 = (Graphics2D) g;
-            g2.setPaint(new GradientPaint(0, 0, BG_DARK, 0, getHeight(),
-                new Color(14, 20, 36)));
+            g2.setPaint(new GradientPaint(0, 0, BG_DARK, 0, getHeight(), new Color(241, 226, 202)));
             g2.fillRect(0, 0, getWidth(), getHeight());
+
+            g2.setColor(new Color(24, 125, 108, 30));
+            g2.fillOval(-150, -110, 360, 360);
+            g2.setColor(new Color(215, 141, 60, 35));
+            g2.fillOval(getWidth() - 300, getHeight() - 240, 340, 340);
         }
     }
 
