@@ -1,5 +1,13 @@
 # Fake Offer Letter Detection
 
+![GUI Demo](./output/output2.png)
+
+> Detects fake job offers using rule-based checks and NLP signals with a risk score system# Fake Offer Letter Detection
+
+![App Output](./output/output.png)
+
+# Fake Offer Letter Detection
+
 A Java-based project that helps detect potentially fake internship and job offers using:
 
 - rule-based checks
