@@ -1,7 +1,5 @@
 package model;
 
-import service.VerificationEngine;
-
 public class JobOffer extends Offer {
 
     public JobOffer(String companyName, String email, double salary, String description, boolean hasFee) {
@@ -10,6 +8,7 @@ public class JobOffer extends Offer {
 
     @Override
     public int verifyOffer() {
-        return VerificationEngine.evaluate(this);
+        // Legacy method — use VerificationEngine instance via AppLauncher for full analysis
+        return 0;
     }
 }
