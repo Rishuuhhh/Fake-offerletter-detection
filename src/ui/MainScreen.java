@@ -2,7 +2,7 @@ package ui;
 
 import auth.AuthService;
 import auth.Session;
-import db.HistoryStore;
+import store.HistoryStore;
 import model.AnalysisRecord;
 import model.InternshipOffer;
 import model.JobOffer;
@@ -390,12 +390,11 @@ public class MainScreen extends JPanel {
             ? new InternshipOffer(company, email, pay, desc, hasFee)
             : new JobOffer(company, email, pay, desc, hasFee);
 
-        VerificationResult result = engine.evaluateDetailed(offer, urgent, piFlag, role, type);
+        VerificationResult result = engine.evaluate(offer, urgent, piFlag, role, type);
 
         if (currentSession != null) {
             historyStore.save(new AnalysisRecord(
                 currentSession.getUsername(),
-                java.time.LocalDateTime.now().toString(),
                 company, type != null ? type : "",
                 result.getRiskScore(), result.getNlpRisk(), result.getVerdict()
             ));
@@ -551,10 +550,10 @@ public class MainScreen extends JPanel {
         resultPanel.repaint();
     }
 
-    private void onFeedback(FeedbackProcessor.FeedbackResult r) {
-        String msg = (r == FeedbackProcessor.FeedbackResult.ALREADY_CORRECT)
+    private void onFeedback(FeedbackProcessor.Result r) {
+        String msg = (r == FeedbackProcessor.Result.ALREADY_CORRECT)
             ? "The result was already correct — no changes needed."
-            : "Got it! The system has updated its vocabulary based on your feedback.";
+            : "Got it! Keywords updated. The next analysis will be more accurate.";
         JOptionPane.showMessageDialog(this, msg, "Feedback", JOptionPane.INFORMATION_MESSAGE);
     }
 

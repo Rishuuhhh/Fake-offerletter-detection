@@ -1,209 +1,139 @@
-# Fake Offer Detection System
+# Fake Offer Detector
 
-A Java Swing desktop application that detects fake internship and job offers using rule-based checks, enhanced NLP phrase analysis, user authentication, persistent storage, and an adaptive learning feedback loop.
+A Java desktop app that checks if a job or internship offer is real or a scam. You paste in the offer details, it gives you a verdict — GENUINE, SUSPICIOUS, or FAKE — and tells you exactly why.
 
-## Features
+Built for TCS-408 by JVM Juggernauts (JAVA-IV-T062).  
+Team: Shanu Khatana, Disha Jha, Rakshit Sharma, Tanuja Kanswal
 
-### Offer Analysis
-- Classifies offers as `GENUINE`, `SUSPICIOUS`, or `FAKE`
-- Overall risk score `0–100` and a separate NLP signal score `0–100`
-- Detailed findings explaining every flag raised
-- Supports both internship and full-time job offer contexts
-- Detects common scam indicators:
-  - Free/public email domains
-  - Unrealistic compensation for the role
-  - Registration or security fee requests
-  - Urgency and pressure language
-  - Upfront personal-information demands (Aadhaar, OTP, bank details)
-  - Domain-spoofing patterns (e.g. `amazon-hr.com`)
-  - Salary-promise patterns (e.g. "guaranteed salary of ₹1.5 lakh")
+---
 
-### Enhanced NLP Engine
-- 25+ high-risk fraud phrases with diminishing-returns scoring on repeats
-- 15+ medium-risk persuasion phrases
-- 15+ genuine-signal phrases that reduce suspicion
-- Domain-spoofing regex detection (+20 pts, capped at 1 hit)
-- Salary-promise regex detection (+10 pts, capped at 2 hits)
-- Short-text penalty for descriptions under 20 words
+## How to run
 
-### Adaptive Learning (Feedback Loop)
-- After every analysis, click **Mark as Fake** or **Mark as Genuine**
-- If the system verdict was wrong, the top 5 distinctive phrases are extracted and added to the NLP vocabulary
-- Learned phrases are persisted to SQLite and `data/learned_vocab.csv`
-- On the next analysis the updated vocabulary is applied automatically
-- Phrases from feedback get a 1.2× weight multiplier once 10+ feedback entries exist
-
-### User Authentication
-- Register with a unique username (3–30 chars, alphanumeric/underscore)
-- Passwords hashed with SHA-256 + per-user random salt (no plaintext ever stored)
-- Login lockout after 5 consecutive failed attempts (60-second cooldown)
-- Session displayed in the header; logout clears all form fields
-
-### Persistent Storage
-- **Primary**: SQLite database (`data/fakeofferdetector.db`)
-- **Fallback**: CSV flat files (`data/credentials.csv`, `data/history.csv`, `data/learned_vocab.csv`)
-- Auto-creates schema and seeds 22 known fake offer records on first run
-- Analysis history per user, viewable in-app via the **History** button
-
-## Tech Stack
-
-- Java 25+
-- Java Swing (`javax.swing`) for the desktop UI
-- SQLite via `sqlite-jdbc` (single external JAR, managed by Maven)
-- `java.security.MessageDigest` for SHA-256 password hashing (no third-party crypto)
-- Maven for dependency management and build
-
-## Project Structure
-
-```
-project-root/
-├── src/
-│   ├── main/
-│   │   └── AppLauncher.java         ← entry point
-│   ├── ui/
-│   │   ├── Theme.java               ← shared colors, fonts, component helpers
-│   │   ├── AppFrame.java            ← single JFrame, CardLayout host
-│   │   ├── LoginScreen.java
-│   │   ├── RegisterScreen.java
-│   │   ├── MainScreen.java          ← offer analysis form
-│   │   └── HistoryPanel.java
-│   ├── auth/
-│   │   ├── AuthService.java
-│   │   └── Session.java
-│   ├── db/
-│   │   ├── DatabaseManager.java
-│   │   ├── UserStore.java
-│   │   ├── HistoryStore.java
-│   │   ├── SeedLoader.java
-│   │   ├── VocabularyStore.java
-│   │   └── FeedbackLogger.java
-│   ├── model/
-│   │   ├── Offer.java
-│   │   ├── JobOffer.java
-│   │   ├── InternshipOffer.java
-│   │   ├── VerificationResult.java
-│   │   ├── User.java
-│   │   ├── AnalysisRecord.java
-│   │   ├── LearnedVocabEntry.java
-│   │   └── FeedbackEvent.java
-│   ├── service/
-│   │   ├── NlpSignalAnalyzer.java
-│   │   ├── VerificationEngine.java
-│   │   ├── RuleChecker.java
-│   │   ├── FeedbackProcessor.java
-│   │   └── PhraseExtractor.java
-│   └── utils/
-│       ├── InputValidator.java
-│       ├── PasswordHasher.java
-│       └── FileStore.java
-├── lib/
-│   └── README.txt                   ← where to place sqlite-jdbc jar (Maven handles this)
-├── data/                            ← created at runtime (gitignored)
-└── pom.xml
-```
-
-## Database Schema
-
-Five tables are auto-created on first run:
-
-| Table | Purpose |
-|---|---|
-| `users` | Registered user credentials (hashed) |
-| `analysis_history` | Per-user offer analysis records |
-| `seed_offers` | 22 pre-seeded known fake offer letters |
-| `learned_vocabulary` | NLP phrases learned from user feedback |
-| `feedback_log` | Audit log of every feedback submission |
-
-## How Scoring Works
-
-`VerificationEngine` combines rule-based and NLP checks:
-
-1. Email domain legitimacy
-2. Salary/stipend realism (different threshold for internships)
-3. Fee request presence
-4. Urgency and personal-info flags
-5. Weak company name patterns
-6. NLP phrase analysis (weighted, with diminishing returns)
-7. Direct suspicious phrase matches
-
-Final score is clamped to `0–100` and classified:
-
-| Range | Verdict |
-|---|---|
-| 0–29 | `GENUINE` |
-| 30–59 | `SUSPICIOUS` |
-| 60–100 | `FAKE` |
-
-## Prerequisites
-
-- JDK 25 or newer
-- Maven 3.9+
-
-Check your versions:
+You just need Java installed. No Maven, no extra setup.
 
 ```bash
-java -version
-mvn -version
+./run.sh
 ```
 
-## Build & Run
-
-From the project root:
+That compiles everything and launches the app. If you want to do it manually:
 
 ```bash
-# Run directly (Maven downloads SQLite dependency automatically)
-mvn exec:java
-
-# Or build a fat jar and run it
-mvn package
-java -jar target/fake-offer-detector-1.0.0-jar-with-dependencies.jar
+javac -d out $(find src -name "*.java")
+java -cp out main.AppLauncher
 ```
 
-On first launch the app will:
-1. Create `data/fakeofferdetector.db` and all five tables
-2. Seed 22 known fake offer records
-3. Show the **Login** screen
+The `data/` folder gets created automatically the first time you run it.
 
-### Running Tests
+---
 
-Tests require jqwik and JUnit 5 jars in `lib/` — see `lib/README.txt` for download links.
+## What it does
 
-```bash
-# Compile everything (app + tests)
-javac -cp "lib/sqlite-jdbc-3.x.x.jar:lib/jqwik-1.x.x.jar:lib/junit-platform-console-standalone-1.x.x.jar" \
-      -d out \
-      $(find src -name "*.java")
+When you submit an offer, the app checks two things:
 
-# Run all tests
-java -cp "out:lib/sqlite-jdbc-3.x.x.jar:lib/jqwik-1.x.x.jar:lib/junit-platform-console-standalone-1.x.x.jar" \
-     org.junit.platform.console.ConsoleLauncher --select-package=test
+**Basic rule checks:**
+- Is the email from a free provider like Gmail or Yahoo? That's a red flag.
+- Is the salary way too high to be real?
+- Does the offer ask for a registration or security fee?
+- Does it ask for Aadhaar, OTP, or bank details upfront?
+- Did you check the "urgent language" box?
+
+**NLP phrase scanning:**
+- Scans the description for known scam phrases like "pay now", "limited seats", "refer and earn", "passive income", "send via UPI"
+- Also checks for fake domain patterns like `amazon-hr.com` or `tcs-hiring.net`
+- Genuine phrases like "background verification" or "probation period" actually lower the risk score
+
+Both scores get combined into a final number from 0 to 100:
+- 0–29 = GENUINE
+- 30–59 = SUSPICIOUS
+- 60–100 = FAKE
+
+---
+
+## The feedback loop
+
+After you get a result, you can click "Mark as Fake" or "Mark as Genuine" if the app got it wrong. It pulls key phrases from the description and adds them to the keyword files automatically. Next time you analyze something similar, it'll be more accurate.
+
+---
+
+## Keyword files
+
+All the detection logic is driven by files in the `data/` folder. You can edit them in any text editor — no recompiling needed.
+
+`data/fake_keywords.csv` — scam phrases, one per line with a type prefix:
+```
+high,pay registration fee
+medium,work from home no experience needed
+rush,act now limited seats
+payment,send via upi
 ```
 
-## Usage
+`data/genuine_keywords.csv` — phrases that suggest a real offer:
+```
+background verification
+offer letter on company letterhead
+probation period
+```
 
-1. **Register** — create an account with a unique username and password (min. 8 chars)
-2. **Login** — sign in to access the offer detection form
-3. **Analyse** — fill in offer details and click **Analyze Offer**
-4. **Feedback** — after seeing the result, click **Mark as Fake** or **Mark as Genuine** to correct the system
-5. **History** — click **History** in the header to review past analyses
-6. **Logout** — click **Sign Out** to end your session
+`data/trusted_domains.csv` — company email domains you trust (one per line):
+```
+infosys.com
+wipro.com
+tcs.com
+```
 
-## Notes and Limitations
+`data/blocked_domains.csv` — domains that are always suspicious:
+```
+gmail.com
+yahoo.com
+```
 
-- NLP analysis is phrase-signal based, not a trained ML model
-- Rule thresholds are heuristic and can be tuned in `NlpSignalAnalyzer.java`
-- The feedback loop improves accuracy over time but requires multiple corrections to have a noticeable effect
-- This tool assists screening — it does not replace human verification
+---
 
-## Team
+## Accounts and security
 
-JVM Juggernauts (`JAVA-IV-T062`) — TCS-408
+- Passwords are hashed with SHA-256 + a random salt, never stored in plain text
+- After 5 wrong login attempts, the account locks for 60 seconds
+- Each user only sees their own analysis history
 
-- Shanu Khatana
-- Disha Jha
-- Rakshit Sharma
-- Tanuja Kanswal
+---
 
-## License
+## Project layout
 
-This project is licensed under the terms in [LICENSE](LICENSE).
+```
+src/
+  main/AppLauncher.java       starts the app, wires everything together
+  auth/                       login, registration, session, lockout
+  model/                      data classes (Offer, User, AnalysisRecord, etc.)
+  service/                    scoring engine, NLP analyzer, feedback processor
+  store/                      reads and writes all the CSV files
+  ui/                         all the screens (Login, Register, Main, History)
+  utils/                      CSV helper, password hasher, input validator
+
+data/                         created on first run
+  credentials.csv             user accounts
+  history.csv                 past analyses per user
+  fake_keywords.csv           scam phrases
+  genuine_keywords.csv        legitimate phrases
+  trusted_domains.csv         known company domains
+  blocked_domains.csv         free/scam domains
+  feedback_log.csv            log of user corrections
+```
+
+---
+
+## Test it with the sample PDFs
+
+There are two sample offer letters in the repo:
+
+- `Real-Offer-Letter-NovaTech.pdf` — a real-looking offer with proper CTC, no fees, official domain
+- `FAKE-Offer-Letter-GlobalTech.pdf` — a scam with MLM structure, a ₹2,499 fee, and WhatsApp-only contact
+
+Just copy the text from either one, paste it into the description field, and hit Analyze.
+
+---
+
+## Known limitations
+
+- The NLP is phrase matching, not actual machine learning — it won't catch every scam
+- If a scam uses unusual wording it hasn't seen before, it might miss it
+- The thresholds (30/60) are tuned by hand and might not be perfect for every case

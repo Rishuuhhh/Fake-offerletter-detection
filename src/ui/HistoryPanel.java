@@ -1,6 +1,6 @@
 package ui;
 
-import db.HistoryStore;
+import store.HistoryStore;
 import model.AnalysisRecord;
 
 import javax.swing.*;
@@ -50,7 +50,7 @@ public class HistoryPanel extends JDialog {
         add(top, BorderLayout.NORTH);
 
         // Table
-        String[] cols = {"Timestamp", "Company", "Type", "Risk", "NLP", "Verdict"};
+        String[] cols = {"Company", "Type", "Risk", "NLP", "Verdict"};
         DefaultTableModel model = new DefaultTableModel(cols, 0) {
             public boolean isCellEditable(int r, int c) { return false; }
         };
@@ -73,13 +73,13 @@ public class HistoryPanel extends JDialog {
         header.setReorderingAllowed(false);
 
         // Column widths
-        int[] widths = {170, 170, 115, 55, 55, 90};
+        int[] widths = {170, 115, 55, 55, 90};
         for (int i = 0; i < widths.length; i++) {
             table.getColumnModel().getColumn(i).setPreferredWidth(widths[i]);
         }
 
         // Color-code the Verdict column
-        table.getColumnModel().getColumn(5).setCellRenderer(new DefaultTableCellRenderer() {
+        table.getColumnModel().getColumn(4).setCellRenderer(new DefaultTableCellRenderer() {
             public Component getTableCellRendererComponent(JTable t, Object val,
                     boolean sel, boolean focus, int row, int col) {
                 JLabel lbl = (JLabel) super.getTableCellRendererComponent(t, val, sel, focus, row, col);
@@ -130,7 +130,7 @@ public class HistoryPanel extends JDialog {
         List<AnalysisRecord> records = store.findByUsername(username);
         for (AnalysisRecord r : records) {
             model.addRow(new Object[]{
-                r.getTimestamp(), r.getCompanyName(), r.getOfferType(),
+                r.getCompanyName(), r.getOfferType(),
                 r.getRiskScore(), r.getNlpScore(), r.getVerdict()
             });
         }

@@ -1,23 +1,17 @@
 package utils;
 
 import java.io.*;
-import java.nio.file.*;
 import java.util.*;
 
-/**
- * Centralised CSV read/write utility.
- * All CSV I/O in the application goes through this class.
- */
+// handles all CSV file operations
 public class FileStore {
 
     public static final String CREDENTIALS_PATH = "data/credentials.csv";
-    public static final String HISTORY_PATH     = "data/history.csv";
-    public static final String VOCAB_PATH       = "data/learned_vocab.csv";
+    public static final String HISTORY_PATH = "data/history.csv";
+    public static final String VOCAB_PATH = "data/learned_vocab.csv";
+    public static final String FEEDBACK_LOG_PATH = "data/feedback_log.csv";
 
-    /**
-     * Appends a single data row to a CSV file.
-     * Creates the file with a header row if it does not exist.
-     */
+    // adds a row to CSV file
     public void appendCsv(String filePath, String[] headers, String[] values) {
         try {
             File file = new File(filePath);
@@ -28,14 +22,11 @@ public class FileStore {
                 pw.println(String.join(",", escapeRow(values)));
             }
         } catch (IOException e) {
-            System.err.println("[FileStore] appendCsv failed for " + filePath + ": " + e.getMessage());
+            System.err.println("appendCsv failed for " + filePath + ": " + e.getMessage());
         }
     }
 
-    /**
-     * Reads all data rows from a CSV file, skipping the header.
-     * Returns an empty list if the file does not exist.
-     */
+    // reads all rows from CSV
     public List<String[]> readCsv(String filePath) {
         List<String[]> rows = new ArrayList<>();
         File file = new File(filePath);
@@ -46,15 +37,12 @@ public class FileStore {
                 if (!line.trim().isEmpty()) rows.add(parseCsvLine(line));
             }
         } catch (IOException e) {
-            System.err.println("[FileStore] readCsv failed for " + filePath + ": " + e.getMessage());
+            System.err.println("readCsv failed for " + filePath + ": " + e.getMessage());
         }
         return rows;
     }
 
-    /**
-     * Rewrites the entire CSV file with the given rows.
-     * Used for vocab upsert where an existing phrase weight must be updated.
-     */
+    // rewrites entire CSV file
     public void rewriteCsv(String filePath, String[] headers, List<String[]> rows) {
         try {
             File file = new File(filePath);
@@ -64,18 +52,16 @@ public class FileStore {
                 for (String[] row : rows) pw.println(String.join(",", escapeRow(row)));
             }
         } catch (IOException e) {
-            System.err.println("[FileStore] rewriteCsv failed for " + filePath + ": " + e.getMessage());
+            System.err.println("rewriteCsv failed for " + filePath + ": " + e.getMessage());
         }
     }
-
-    // ── Helpers ────────────────────────────────────────────────────
 
     private void ensureParentDirs(File file) {
         File parent = file.getParentFile();
         if (parent != null && !parent.exists()) parent.mkdirs();
     }
 
-    /** Wraps fields containing commas or quotes in double-quotes. */
+    // wraps fields with commas in quotes
     private String[] escapeRow(String[] fields) {
         String[] escaped = new String[fields.length];
         for (int i = 0; i < fields.length; i++) {
@@ -88,7 +74,7 @@ public class FileStore {
         return escaped;
     }
 
-    /** Simple CSV line parser that handles double-quoted fields. */
+    // parses CSV line with quoted fields
     private String[] parseCsvLine(String line) {
         List<String> fields = new ArrayList<>();
         StringBuilder sb = new StringBuilder();
@@ -97,16 +83,22 @@ public class FileStore {
             char c = line.charAt(i);
             if (inQuotes) {
                 if (c == '"' && i + 1 < line.length() && line.charAt(i + 1) == '"') {
-                    sb.append('"'); i++;
+                    sb.append('"'); 
+                    i++;
                 } else if (c == '"') {
                     inQuotes = false;
                 } else {
                     sb.append(c);
                 }
             } else {
-                if (c == '"') { inQuotes = true; }
-                else if (c == ',') { fields.add(sb.toString()); sb.setLength(0); }
-                else { sb.append(c); }
+                if (c == '"') { 
+                    inQuotes = true; 
+                } else if (c == ',') { 
+                    fields.add(sb.toString()); 
+                    sb.setLength(0); 
+                } else { 
+                    sb.append(c); 
+                }
             }
         }
         fields.add(sb.toString());

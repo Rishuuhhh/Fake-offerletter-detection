@@ -1,47 +1,78 @@
 package service;
 
-import java.util.Locale;
+import java.io.*;
+import java.util.*;
 
+// checks email domains and other basic rules
 public class RuleChecker {
 
-    private static final String[] FREE_EMAIL_DOMAINS = {
-        "@gmail.com", "@yahoo.com", "@hotmail.com", "@outlook.com", "@rediffmail.com"
-    };
+    private static final String TRUSTED_FILE = "data/trusted_domains.csv";
+    private static final String BLOCKED_FILE = "data/blocked_domains.csv";
 
-    public static boolean isValidEmail(String email) {
-        return email != null && email.contains("@") && !isFreeEmailDomain(email);
-    }
+    private static final Set<String> TRUSTED = loadDomains(TRUSTED_FILE);
+    private static final Set<String> BLOCKED = loadDomains(BLOCKED_FILE);
 
-    public static boolean isUnrealisticSalary(double salary) {
-        return salary > 1000000;
-    }
-
-    public static boolean isFreeEmailDomain(String email) {
-        if (email == null) return true;
-        String lower = email.toLowerCase(Locale.ROOT).trim();
-        for (String domain : FREE_EMAIL_DOMAINS) {
-            if (lower.endsWith(domain)) return true;
+    private static Set<String> loadDomains(String filePath) {
+        Set<String> domains = new HashSet<>();
+        File file = new File(filePath);
+        if (!file.exists()) return domains;
+        try (BufferedReader br = new BufferedReader(new FileReader(file))) {
+            String line;
+            br.readLine(); // header
+            while ((line = br.readLine()) != null) {
+                line = line.trim().toLowerCase();
+                if (!line.isEmpty() && !line.startsWith("#")) {
+                    domains.add(line);
+                }
+            }
+        } catch (IOException e) {
+            System.err.println("can't read " + filePath + ": " + e.getMessage());
         }
-        return false;
+        return domains;
     }
 
-    public static boolean hasWeakCompanyName(String companyName) {
-        if (companyName == null) return true;
-        String c = companyName.trim();
-        return c.length() < 3 || c.matches("[0-9 ]+");
+    // checks if email is from a real company
+    public static boolean isValidEmail(String email) {
+        if (email == null || !email.contains("@")) return false;
+        String domain = email.substring(email.indexOf('@') + 1).toLowerCase().trim();
+        if (BLOCKED.contains(domain)) return false;
+        if (TRUSTED.contains(domain)) return true;
+        return !BLOCKED.contains(domain);
     }
 
-    public static boolean isLikelyInternshipOffer(String offerType, String position) {
-        String type = offerType == null ? "" : offerType.toLowerCase(Locale.ROOT);
-        String pos  = position  == null ? "" : position.toLowerCase(Locale.ROOT);
-        return type.contains("intern") || pos.contains("intern");
+    public static boolean isBlockedDomain(String email) {
+        if (email == null || !email.contains("@")) return true;
+        String domain = email.substring(email.indexOf('@') + 1).toLowerCase().trim();
+        return BLOCKED.contains(domain);
     }
 
-    public static boolean hasSuspiciousWords(String desc) {
-        if (desc == null) return false;
-        String lower = desc.toLowerCase();
-        return lower.contains("urgent hiring") ||
-               lower.contains("pay registration fee") ||
-               lower.contains("guaranteed job");
+    public static boolean isTrustedDomain(String email) {
+        if (email == null || !email.contains("@")) return false;
+        String domain = email.substring(email.indexOf('@') + 1).toLowerCase().trim();
+        return TRUSTED.contains(domain);
+    }
+
+    // checks if salary is too high to be real
+    public static boolean isUnrealisticSalary(double salary) {
+        return salary > 1_000_000;
+    }
+
+    // checks if company name looks fake
+    public static boolean hasWeakCompanyName(String name) {
+        if (name == null) return true;
+        String n = name.trim();
+        return n.length() < 3 || n.matches("[0-9 ]+");
+    }
+
+    public static boolean isInternshipOffer(String offerType, String position) {
+        String t = offerType == null ? "" : offerType.toLowerCase();
+        String p = position == null ? "" : position.toLowerCase();
+        return t.contains("intern") || p.contains("intern");
+    }
+
+    public static boolean hasSuspiciousWords(String description) {
+        if (description == null) return false;
+        String d = description.toLowerCase();
+        return d.contains("urgent hiring") || d.contains("pay registration fee") || d.contains("guaranteed job");
     }
 }

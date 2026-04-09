@@ -4,57 +4,45 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 
+// hashes passwords with salt
 public class PasswordHasher {
 
     private static final int SALT_BYTES = 16;
 
-    /** Generates a 16-byte random salt, hex-encoded (32 chars). */
+    // generates random salt
     public static String generateSalt() {
         byte[] bytes = new byte[SALT_BYTES];
         new SecureRandom().nextBytes(bytes);
-        return bytesToHex(bytes);
+        return toHex(bytes);
     }
 
-    /**
-     * Returns SHA-256(salt + password) as a lowercase hex string (64 chars).
-     * Never stores or returns the plaintext password.
-     */
+    // returns SHA-256(salt + password)
     public static String hash(String password, String salt) {
         try {
             MessageDigest md = MessageDigest.getInstance("SHA-256");
             md.update((salt + password).getBytes(java.nio.charset.StandardCharsets.UTF_8));
-            return bytesToHex(md.digest());
+            return toHex(md.digest());
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException("SHA-256 not available", e);
         }
     }
 
-    /**
-     * Hashes the password with a freshly generated salt.
-     * @return String[]{hash, salt}
-     */
+    // hashes password with new salt
     public static String[] hashWithNewSalt(String password) {
         String salt = generateSalt();
-        return new String[]{hash(password, salt), salt};
+        return new String[]{ hash(password, salt), salt };
     }
 
-    /**
-     * Constant-time comparison to prevent timing attacks.
-     * Returns true iff hash(password, salt) equals storedHash.
-     */
+    // checks if password matches stored hash
     public static boolean verify(String password, String salt, String storedHash) {
         String computed = hash(password, salt);
-        try {
-            return MessageDigest.isEqual(
-                computed.getBytes(java.nio.charset.StandardCharsets.UTF_8),
-                storedHash.getBytes(java.nio.charset.StandardCharsets.UTF_8)
-            );
-        } catch (Exception e) {
-            return false;
-        }
+        return MessageDigest.isEqual(
+            computed.getBytes(java.nio.charset.StandardCharsets.UTF_8),
+            storedHash.getBytes(java.nio.charset.StandardCharsets.UTF_8)
+        );
     }
 
-    private static String bytesToHex(byte[] bytes) {
+    private static String toHex(byte[] bytes) {
         StringBuilder sb = new StringBuilder(bytes.length * 2);
         for (byte b : bytes) sb.append(String.format("%02x", b));
         return sb.toString();

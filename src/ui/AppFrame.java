@@ -2,7 +2,7 @@ package ui;
 
 import auth.AuthService;
 import auth.Session;
-import db.HistoryStore;
+import store.HistoryStore;
 import service.FeedbackProcessor;
 import service.VerificationEngine;
 
