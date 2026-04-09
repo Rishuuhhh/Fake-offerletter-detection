@@ -2,11 +2,7 @@ package service;
 
 import java.util.*;
 
-/**
- * Extracts the top-N most distinctive phrases from offer description text.
- * Uses a simple TF-based approach with 1-gram and 2-gram scoring.
- * No external NLP library required.
- */
+// pulls out important phrases from text
 public class PhraseExtractor {
 
     private static final Set<String> STOP_WORDS = new HashSet<>(Arrays.asList(
@@ -21,10 +17,7 @@ public class PhraseExtractor {
         "me","him","us","them","who","which","what","when","where","how"
     ));
 
-    /**
-     * Extracts the top-N most distinctive phrases from the given text.
-     * Returns 1-grams and 2-grams scored by frequency × word-length.
-     */
+    // gets top N phrases from text
     public List<String> extractTopPhrases(String text, int n) {
         if (text == null || text.trim().isEmpty()) return Collections.emptyList();
 
@@ -34,12 +27,12 @@ public class PhraseExtractor {
                                 .trim();
         String[] tokens = normalized.split(" ");
 
-        // Build frequency maps for 1-grams and 2-grams
+        // count 1-grams and 2-grams
         Map<String, Integer> freq = new LinkedHashMap<>();
         freq.putAll(buildNgramFrequency(tokens, 1));
         freq.putAll(buildNgramFrequency(tokens, 2));
 
-        // Score: frequency × total character length (prefers longer, more specific phrases)
+        // score by frequency * length
         Map<String, Double> scores = new LinkedHashMap<>();
         for (Map.Entry<String, Integer> e : freq.entrySet()) {
             String phrase = e.getKey();
@@ -47,7 +40,7 @@ public class PhraseExtractor {
             scores.put(phrase, score);
         }
 
-        // Sort descending by score
+        // sort by score
         List<Map.Entry<String, Double>> sorted = new ArrayList<>(scores.entrySet());
         sorted.sort((a, b) -> Double.compare(b.getValue(), a.getValue()));
 
@@ -59,11 +52,9 @@ public class PhraseExtractor {
         return result;
     }
 
-    /** Builds an n-gram frequency map, filtering out stop words. */
     private Map<String, Integer> buildNgramFrequency(String[] tokens, int gramSize) {
         Map<String, Integer> freq = new LinkedHashMap<>();
         for (int i = 0; i <= tokens.length - gramSize; i++) {
-            // Build the n-gram
             StringBuilder sb = new StringBuilder();
             boolean hasContent = false;
             for (int j = 0; j < gramSize; j++) {
@@ -75,7 +66,6 @@ public class PhraseExtractor {
             }
             String ngram = sb.toString().trim();
             if (ngram.isEmpty() || !hasContent) continue;
-            // Skip pure stop-word n-grams
             if (STOP_WORDS.contains(ngram)) continue;
             freq.merge(ngram, 1, Integer::sum);
         }

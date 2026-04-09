@@ -1,122 +1,78 @@
 package service;
 
 import auth.Session;
-import db.FeedbackLogger;
-import db.VocabularyStore;
 import model.FeedbackEvent;
-import model.LearnedVocabEntry;
+import store.FeedbackLogger;
 import utils.PasswordHasher;
 
-import javax.swing.*;
-import java.time.LocalDateTime;
+import javax.swing.SwingWorker;
 import java.util.List;
 import java.util.function.Consumer;
 
-/**
- * Processes user feedback on offer analysis results.
- * Extracts phrases, updates the learned vocabulary, logs the event,
- * and reloads the NLP analyzer — all on a background thread.
- */
+// handles user feedback when they correct the system
 public class FeedbackProcessor {
 
-    public enum FeedbackResult { ALREADY_CORRECT, VOCABULARY_UPDATED }
+    public enum Result { ALREADY_CORRECT, UPDATED }
 
-    private static final int    FAKE_WEIGHT_INCREMENT    =  5;
-    private static final int    GENUINE_WEIGHT_INCREMENT = -3;
-    private static final int    TOP_N_PHRASES            =  5;
+    private static final int TOP_PHRASES = 5;
 
-    private final PhraseExtractor    phraseExtractor;
-    private final VocabularyStore    vocabularyStore;
-    private final FeedbackLogger     feedbackLogger;
-    private final NlpSignalAnalyzer  nlpAnalyzer;
+    private final PhraseExtractor phraseExtractor;
+    private final FeedbackLogger feedbackLogger;
+    private final NlpSignalAnalyzer nlpAnalyzer;
 
-    public FeedbackProcessor(PhraseExtractor phraseExtractor,
-                             VocabularyStore vocabularyStore,
-                             FeedbackLogger feedbackLogger,
-                             NlpSignalAnalyzer nlpAnalyzer) {
+    public FeedbackProcessor(PhraseExtractor phraseExtractor, FeedbackLogger feedbackLogger, NlpSignalAnalyzer nlpAnalyzer) {
         this.phraseExtractor = phraseExtractor;
-        this.vocabularyStore = vocabularyStore;
-        this.feedbackLogger  = feedbackLogger;
-        this.nlpAnalyzer     = nlpAnalyzer;
+        this.feedbackLogger = feedbackLogger;
+        this.nlpAnalyzer = nlpAnalyzer;
     }
 
-    /**
-     * Processes feedback asynchronously on a SwingWorker background thread.
-     * Calls {@code onComplete} on the EDT when done.
-     *
-     * @param session       current user session
-     * @param description   the offer description text that was analysed
-     * @param systemVerdict the verdict the system produced (FAKE/SUSPICIOUS/GENUINE)
-     * @param userVerdict   the user's correction (FAKE or GENUINE)
-     * @param onComplete    callback invoked on EDT with the FeedbackResult
-     */
-    public void processFeedbackAsync(Session session, String description,
-                                     String systemVerdict, String userVerdict,
-                                     Consumer<FeedbackResult> onComplete) {
-        new SwingWorker<FeedbackResult, Void>() {
-            @Override
-            protected FeedbackResult doInBackground() {
-                return doProcess(session, description, systemVerdict, userVerdict);
+    // runs on background thread
+    public void processFeedbackAsync(Session session, String description, String systemVerdict, String userVerdict, Consumer<Result> onComplete) {
+        new SwingWorker<Result, Void>() {
+            protected Result doInBackground() {
+                return processFeedback(session, description, systemVerdict, userVerdict);
             }
-            @Override
             protected void done() {
-                try { onComplete.accept(get()); }
-                catch (Exception e) { onComplete.accept(FeedbackResult.ALREADY_CORRECT); }
+                try { 
+                    onComplete.accept(get()); 
+                } catch (Exception e) { 
+                    onComplete.accept(Result.ALREADY_CORRECT); 
+                }
             }
         }.execute();
     }
 
-    /** Synchronous version (for testing). */
-    public FeedbackResult process(Session session, String description,
-                                  String systemVerdict, String userVerdict) {
-        return doProcess(session, description, systemVerdict, userVerdict);
-    }
+    public Result processFeedback(Session session, String description, String systemVerdict, String userVerdict) {
+        String sys = normalise(systemVerdict);
+        String user = normalise(userVerdict);
 
-    private FeedbackResult doProcess(Session session, String description,
-                                     String systemVerdict, String userVerdict) {
-        // Normalise verdicts for comparison
-        String sysNorm  = normaliseVerdict(systemVerdict);
-        String userNorm = normaliseVerdict(userVerdict);
+        if (sys.equals(user)) return Result.ALREADY_CORRECT;
 
-        if (sysNorm.equals(userNorm)) return FeedbackResult.ALREADY_CORRECT;
+        boolean isFake = "FAKE".equals(user);
 
-        // Extract top phrases
-        List<String> phrases = phraseExtractor.extractTopPhrases(description, TOP_N_PHRASES);
-
-        // Determine category and weight delta
-        boolean isFakeFeedback = "FAKE".equals(userNorm);
-        String  category       = isFakeFeedback ? "fraud" : "genuine";
-        int     weightDelta    = isFakeFeedback ? FAKE_WEIGHT_INCREMENT : GENUINE_WEIGHT_INCREMENT;
-
-        // Upsert each phrase into the vocabulary
+        // extract phrases and update keyword files
+        List<String> phrases = phraseExtractor.extractTopPhrases(description, TOP_PHRASES);
         for (String phrase : phrases) {
             if (phrase == null || phrase.trim().isEmpty()) continue;
-            LearnedVocabEntry entry = new LearnedVocabEntry(phrase.trim(), category, weightDelta);
-            vocabularyStore.upsert(entry);
+            if (isFake) nlpAnalyzer.appendFakeKeyword(phrase.trim());
+            else nlpAnalyzer.appendGenuineKeyword(phrase.trim());
         }
 
-        // Log the feedback event
-        String descHash = PasswordHasher.hash(description, "feedback-hash-salt");
-        FeedbackEvent event = new FeedbackEvent(
+        // log it
+        feedbackLogger.log(new FeedbackEvent(
             session != null ? session.getUsername() : "anonymous",
-            LocalDateTime.now().toString(),
-            descHash,
-            systemVerdict,
+            PasswordHasher.hash(description, "feedback-salt"),
+            systemVerdict, 
             userVerdict,
             String.join(", ", phrases)
-        );
-        feedbackLogger.log(event);
+        ));
 
-        // Reload NLP analyzer with updated vocabulary
-        nlpAnalyzer.reloadLearnedVocabulary(vocabularyStore);
-
-        return FeedbackResult.VOCABULARY_UPDATED;
+        return Result.UPDATED;
     }
 
-    private String normaliseVerdict(String verdict) {
-        if (verdict == null) return "";
-        String v = verdict.trim().toUpperCase();
-        // Treat SUSPICIOUS same as FAKE for feedback purposes
-        return "SUSPICIOUS".equals(v) ? "FAKE" : v;
+    private String normalise(String v) {
+        if (v == null) return "";
+        String s = v.trim().toUpperCase();
+        return "SUSPICIOUS".equals(s) ? "FAKE" : s;
     }
 }
