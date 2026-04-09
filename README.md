@@ -47,7 +47,7 @@ A Java Swing desktop application that detects fake internship and job offers usi
 
 ## Tech Stack
 
-- Java 11+
+- Java 25+
 - Java Swing (`javax.swing`) for the desktop UI
 - SQLite via `sqlite-jdbc` (single external JAR, managed by Maven)
 - `java.security.MessageDigest` for SHA-256 password hashing (no third-party crypto)
@@ -136,8 +136,8 @@ Final score is clamped to `0–100` and classified:
 
 ## Prerequisites
 
-- JDK 11 or newer
-- Maven 3.6+
+- JDK 25 or newer
+- Maven 3.9+
 
 Check your versions:
 
