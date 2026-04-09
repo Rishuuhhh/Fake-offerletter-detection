@@ -8,17 +8,23 @@ import java.util.List;
 
 public class VerificationEngine {
 
-    public static int evaluate(Offer offer) {
+    private final NlpSignalAnalyzer nlpAnalyzer;
+
+    public VerificationEngine(NlpSignalAnalyzer nlpAnalyzer) {
+        this.nlpAnalyzer = nlpAnalyzer;
+    }
+
+    public int evaluate(Offer offer) {
         return evaluateDetailed(offer, false, false, "", "").getRiskScore();
     }
 
-    public static VerificationResult evaluateDetailed(
+    public VerificationResult evaluateDetailed(
             Offer offer,
             boolean usesUrgency,
             boolean asksPersonalInfo,
             String position,
-            String offerType
-    ) {
+            String offerType) {
+
         int riskScore = 0;
         List<String> findings = new ArrayList<>();
 
@@ -55,7 +61,7 @@ public class VerificationEngine {
             findings.add("Company name format looks weak or incomplete.");
         }
 
-        NlpSignalAnalyzer.NlpAnalysis nlp = NlpSignalAnalyzer.analyze(offer.getDescription());
+        NlpSignalAnalyzer.NlpAnalysis nlp = nlpAnalyzer.analyze(offer.getDescription());
         int nlpRisk = nlp.getRisk();
         riskScore += Math.round(nlpRisk * 0.45f);
         findings.addAll(nlp.getNotes());
@@ -66,26 +72,18 @@ public class VerificationEngine {
         }
 
         riskScore = Math.max(0, Math.min(riskScore, 100));
-        String verdict = classify(riskScore);
-        return new VerificationResult(riskScore, nlpRisk, verdict, findings);
+        return new VerificationResult(riskScore, nlpRisk, classify(riskScore), findings);
     }
 
     public static String classify(int score) {
-        if (score >= 60)
-            return "FAKE";
-        else if (score >= 30)
-            return "SUSPICIOUS";
-        else
-            return "GENUINE";
+        if (score >= 60) return "FAKE";
+        if (score >= 30) return "SUSPICIOUS";
+        return "GENUINE";
     }
 
     private static boolean isUnrealisticForRole(double salary, boolean internshipOffer) {
-        if (salary <= 0) {
-            return false;
-        }
-        if (internshipOffer) {
-            return salary > 150000;
-        }
+        if (salary <= 0) return false;
+        if (internshipOffer) return salary > 150000;
         return RuleChecker.isUnrealisticSalary(salary);
     }
 }
