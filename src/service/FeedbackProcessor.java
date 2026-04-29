@@ -54,13 +54,15 @@ public class FeedbackProcessor {
         List<String> phrases = phraseExtractor.extractTopPhrases(description, TOP_PHRASES);
         for (String phrase : phrases) {
             if (phrase == null || phrase.trim().isEmpty()) continue;
-            if (isFake) nlpAnalyzer.appendFakeKeyword(phrase.trim());
-            else nlpAnalyzer.appendGenuineKeyword(phrase.trim());
+          if (trimmedPhrase.length() >= MIN_PHRASE_LENGTH) {
+    if (isFake) nlpAnalyzer.appendFakeKeyword(trimmedPhrase);
+    else nlpAnalyzer.appendGenuineKeyword(trimmedPhrase);
+}
         }
 
         // log it
         feedbackLogger.log(new FeedbackEvent(
-            session != null ? session.getUsername() : "anonymous",
+          String userId = (session != null && session.getUsername() != null) ? session.getUsername() : "anonymous_user";
             PasswordHasher.hash(description, "feedback-salt"),
             systemVerdict, 
             userVerdict,
