@@ -25,7 +25,11 @@ java -cp out main.AppLauncher
 The `data/` folder gets created automatically the first time you run it.
 
 ---
-
+##  Tech Stack
+* **Language:** Java 8+
+* **Framework:** Java Swing (GUI)
+* **Storage:** Local text-based datasets
+  
 ## What it does
 
 When you submit an offer, the app checks two things:
