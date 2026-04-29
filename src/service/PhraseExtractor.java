@@ -27,16 +27,19 @@ public class PhraseExtractor {
                                 .trim();
         String[] tokens = normalized.split(" ");
 
-        // count 1-grams and 2-grams
+        // count 1-grams, 2-grams, and 3-grams
         Map<String, Integer> freq = new LinkedHashMap<>();
         freq.putAll(buildNgramFrequency(tokens, 1));
         freq.putAll(buildNgramFrequency(tokens, 2));
+        freq.putAll(buildNgramFrequency(tokens, 3)); 
 
         // score by frequency * length
         Map<String, Double> scores = new LinkedHashMap<>();
         for (Map.Entry<String, Integer> e : freq.entrySet()) {
             String phrase = e.getKey();
-            double score = e.getValue() * phrase.replace(" ", "").length();
+            // TWEAK: Multi-word phrases get a slight boost to highlight specific scam terms
+            double multiplier = phrase.contains(" ") ? 1.5 : 1.0; 
+            double score = e.getValue() * phrase.replace(" ", "").length() * multiplier;
             scores.put(phrase, score);
         }
 
