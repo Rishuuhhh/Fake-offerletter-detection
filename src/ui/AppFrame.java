@@ -2,17 +2,13 @@ package ui;
 
 import auth.AuthService;
 import auth.Session;
-import store.HistoryStore;
+import java.awt.*;
+import javax.swing.*;
 import service.FeedbackProcessor;
 import service.VerificationEngine;
+import store.HistoryStore;
 
-import javax.swing.*;
-import java.awt.*;
 
-/**
- * Single JFrame that hosts all screens via CardLayout.
- * All screen transitions go through showCard().
- */
 public class AppFrame extends JFrame {
 
     public static final String CARD_LOGIN    = "LOGIN";
@@ -55,11 +51,7 @@ public class AppFrame extends JFrame {
         showCard(CARD_LOGIN);
     }
 
-    /**
-     * Switches to the named card.
-     * Always clears password fields before switching.
-     * Updates the MainScreen session when switching to CARD_MAIN.
-     */
+    
     public void showCard(String cardName) {
         // Always clear sensitive fields
         loginScreen.clearFields();

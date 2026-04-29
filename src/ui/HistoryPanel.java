@@ -1,17 +1,12 @@
 package ui;
 
-import store.HistoryStore;
-import model.AnalysisRecord;
-
-import javax.swing.*;
-import javax.swing.table.*;
 import java.awt.*;
 import java.util.List;
+import javax.swing.*;
+import javax.swing.table.*;
+import model.AnalysisRecord;
+import store.HistoryStore;
 
-/**
- * Shows the logged-in user's past analyses in a clean table dialog.
- * Verdict cells are color-coded so you can spot risky ones at a glance.
- */
 public class HistoryPanel extends JDialog {
 
     private final HistoryStore store;
@@ -24,30 +19,21 @@ public class HistoryPanel extends JDialog {
         this.username = username;
         buildUI();
         loadRecords();
-        setSize(860, 440);
+        setSize(820, 400);
         setLocationRelativeTo(owner);
         setVisible(true);
     }
 
     private void buildUI() {
         getContentPane().setBackground(Theme.BG_MAIN);
-        setLayout(new BorderLayout(0, 0));
+        setLayout(new BorderLayout());
 
-        // Top bar
-        JPanel top = new JPanel(new BorderLayout());
-        top.setBackground(Theme.BG_MAIN);
-        top.setBorder(BorderFactory.createEmptyBorder(16, 20, 10, 20));
-
+        // Header
         JLabel heading = new JLabel("Analysis History");
         heading.setFont(Theme.HEADING);
-        heading.setForeground(Theme.TEAL_LIGHT);
-        top.add(heading, BorderLayout.WEST);
-
-        JLabel sub = new JLabel("Most recent first");
-        sub.setFont(Theme.SMALL);
-        sub.setForeground(Theme.TEXT_DIM);
-        top.add(sub, BorderLayout.EAST);
-        add(top, BorderLayout.NORTH);
+        heading.setForeground(Theme.TEAL);
+        heading.setBorder(BorderFactory.createEmptyBorder(14, 18, 10, 18));
+        add(heading, BorderLayout.NORTH);
 
         // Table
         String[] cols = {"Company", "Type", "Risk", "NLP", "Verdict"};
@@ -59,33 +45,28 @@ public class HistoryPanel extends JDialog {
         table.setBackground(Theme.BG_CARD);
         table.setForeground(Theme.TEXT);
         table.setGridColor(new Color(230, 218, 200));
-        table.setRowHeight(28);
+        table.setRowHeight(26);
         table.setShowVerticalLines(false);
         table.setIntercellSpacing(new Dimension(0, 1));
-        table.setSelectionBackground(new Color(200, 235, 225));
-        table.setSelectionForeground(Theme.TEXT);
 
         JTableHeader header = table.getTableHeader();
         header.setFont(Theme.LABEL);
         header.setBackground(Theme.BG_INPUT);
         header.setForeground(Theme.TEXT_DIM);
-        header.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Theme.BORDER));
         header.setReorderingAllowed(false);
 
-        // Column widths
-        int[] widths = {170, 115, 55, 55, 90};
-        for (int i = 0; i < widths.length; i++) {
+        int[] widths = {170, 110, 55, 55, 90};
+        for (int i = 0; i < widths.length; i++)
             table.getColumnModel().getColumn(i).setPreferredWidth(widths[i]);
-        }
 
-        // Color-code the Verdict column
+        // Color-code Verdict column
         table.getColumnModel().getColumn(4).setCellRenderer(new DefaultTableCellRenderer() {
             public Component getTableCellRendererComponent(JTable t, Object val,
                     boolean sel, boolean focus, int row, int col) {
                 JLabel lbl = (JLabel) super.getTableCellRendererComponent(t, val, sel, focus, row, col);
                 lbl.setHorizontalAlignment(CENTER);
-                String v = val == null ? "" : val.toString();
                 if (!sel) {
+                    String v = val == null ? "" : val.toString();
                     switch (v) {
                         case "GENUINE":    lbl.setForeground(Theme.GREEN);  break;
                         case "SUSPICIOUS": lbl.setForeground(Theme.YELLOW); break;
@@ -98,28 +79,17 @@ public class HistoryPanel extends JDialog {
             }
         });
 
-        // Center-align Risk and NLP columns
-        DefaultTableCellRenderer center = new DefaultTableCellRenderer();
-        center.setHorizontalAlignment(SwingConstants.CENTER);
-        table.getColumnModel().getColumn(3).setCellRenderer(center);
-        table.getColumnModel().getColumn(4).setCellRenderer(center);
-
         JScrollPane scroll = new JScrollPane(table);
-        scroll.setBorder(BorderFactory.createEmptyBorder(0, 20, 0, 20));
+        scroll.setBorder(BorderFactory.createEmptyBorder(0, 16, 0, 16));
         scroll.getViewport().setBackground(Theme.BG_CARD);
-        scroll.setBackground(Theme.BG_MAIN);
         add(scroll, BorderLayout.CENTER);
 
-        // Bottom bar
-        JPanel bottom = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        bottom.setBackground(Theme.BG_MAIN);
-        bottom.setBorder(BorderFactory.createEmptyBorder(8, 20, 12, 20));
-
+        // Footer
         JButton close = new JButton("Close");
         close.setFont(Theme.BODY);
-        close.setForeground(Theme.TEXT_DIM);
-        close.setFocusPainted(false);
         close.addActionListener(e -> dispose());
+        JPanel bottom = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        bottom.setBackground(Theme.BG_MAIN);
         bottom.add(close);
         add(bottom, BorderLayout.SOUTH);
     }
@@ -128,14 +98,12 @@ public class HistoryPanel extends JDialog {
         DefaultTableModel model = (DefaultTableModel) table.getModel();
         model.setRowCount(0);
         List<AnalysisRecord> records = store.findByUsername(username);
-        for (AnalysisRecord r : records) {
-            model.addRow(new Object[]{
-                r.getCompanyName(), r.getOfferType(),
-                r.getRiskScore(), r.getNlpScore(), r.getVerdict()
-            });
-        }
         if (records.isEmpty()) {
-            model.addRow(new Object[]{"No records yet", "", "", "", "", ""});
+            model.addRow(new Object[]{"No records yet", "", "", "", ""});
+            return;
         }
+        for (AnalysisRecord r : records)
+            model.addRow(new Object[]{r.getCompanyName(), r.getOfferType(),
+                r.getRiskScore(), r.getNlpScore(), r.getVerdict()});
     }
 }
