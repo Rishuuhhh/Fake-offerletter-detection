@@ -15,6 +15,7 @@ public class FeedbackProcessor {
     public enum Result { ALREADY_CORRECT, UPDATED }
 
     private static final int TOP_PHRASES = 5;
+    private static final int MIN_PHRASE_LENGTH = 4; // Added constant to filter out junk words
 
     private final PhraseExtractor phraseExtractor;
     private final FeedbackLogger feedbackLogger;
@@ -29,9 +30,11 @@ public class FeedbackProcessor {
     // runs on background thread
     public void processFeedbackAsync(Session session, String description, String systemVerdict, String userVerdict, Consumer<Result> onComplete) {
         new SwingWorker<Result, Void>() {
+            @Override
             protected Result doInBackground() {
                 return processFeedback(session, description, systemVerdict, userVerdict);
             }
+            @Override
             protected void done() {
                 try { 
                     onComplete.accept(get()); 
@@ -53,16 +56,21 @@ public class FeedbackProcessor {
         // extract phrases and update keyword files
         List<String> phrases = phraseExtractor.extractTopPhrases(description, TOP_PHRASES);
         for (String phrase : phrases) {
-            if (phrase == null || phrase.trim().isEmpty()) continue;
-          if (trimmedPhrase.length() >= MIN_PHRASE_LENGTH) {
-    if (isFake) nlpAnalyzer.appendFakeKeyword(trimmedPhrase);
-    else nlpAnalyzer.appendGenuineKeyword(trimmedPhrase);
-}
+            if (phrase == null) continue;
+            String trimmedPhrase = phrase.trim(); // Defined the variable here
+            
+            // Check if the phrase is long enough to be a meaningful keyword
+            if (trimmedPhrase.length() >= MIN_PHRASE_LENGTH) {
+                if (isFake) nlpAnalyzer.appendFakeKeyword(trimmedPhrase);
+                else nlpAnalyzer.appendGenuineKeyword(trimmedPhrase);
+            }
         }
 
-        // log it
+        // Log it - defined userId correctly before using it in the logger
+        String userId = (session != null && session.getUsername() != null) ? session.getUsername() : "anonymous_user";
+        
         feedbackLogger.log(new FeedbackEvent(
-          String userId = (session != null && session.getUsername() != null) ? session.getUsername() : "anonymous_user";
+            userId,
             PasswordHasher.hash(description, "feedback-salt"),
             systemVerdict, 
             userVerdict,
