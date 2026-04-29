@@ -37,7 +37,10 @@ public class RuleChecker {
         String domain = email.substring(email.indexOf('@') + 1).toLowerCase().trim();
         if (BLOCKED.contains(domain)) return false;
         if (TRUSTED.contains(domain)) return true;
-        return !BLOCKED.contains(domain);
+
+        
+       // Also check for common public domains if not in trusted list
+        return !(domain.equals("gmail.com") || domain.equals("yahoo.com") || domain.equals("outlook.com"));
     }
 
     public static boolean isBlockedDomain(String email) {
@@ -73,6 +76,14 @@ public class RuleChecker {
     public static boolean hasSuspiciousWords(String description) {
         if (description == null) return false;
         String d = description.toLowerCase();
-        return d.contains("urgent hiring") || d.contains("pay registration fee") || d.contains("guaranteed job");
+
+        // Added modern scam terms like "laptop fees" and "whatsapp"
+        return d.contains("urgent hiring") || 
+               d.contains("pay registration fee") || 
+               d.contains("guaranteed job") ||
+               d.contains("laptop charges") ||
+               d.contains("refundable security") ||
+               d.contains("whatsapp interview");
+
     }
 }
