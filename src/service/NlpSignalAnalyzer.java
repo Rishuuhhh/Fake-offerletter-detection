@@ -95,6 +95,8 @@ public class NlpSignalAnalyzer {
 
     // checks text for scam signals
     public NlpResult analyze(String text) {
+        // Run domain-spoof check on RAW text before normalization strips dots/hyphens
+        String raw = text == null ? "" : text.toLowerCase(Locale.ROOT);
         String t = normalize(text);
         List<String> notes = new ArrayList<>();
         int score = 0;
@@ -152,8 +154,8 @@ public class NlpSignalAnalyzer {
         score += Math.min(payHits, 5) * 4;
         if (payHits >= 2) notes.add("Financial request language detected.");
 
-        // domain spoofing check
-        if (DOMAIN_SPOOF.matcher(t).find()) {
+        // domain spoofing check — run on raw text so dots/hyphens are preserved
+        if (DOMAIN_SPOOF.matcher(raw).find()) {
             score += 20;
             notes.add("Spoofed company domain detected.");
         }

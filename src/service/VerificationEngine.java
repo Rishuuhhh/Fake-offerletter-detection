@@ -10,7 +10,7 @@ import java.util.List;
  * 
  * Scoring breakdown:
  *   Email domain: +30 if sketchy, -10 if trusted
- *   Salary too high: +25
+ *   Salary too high: +30  (raised from 25 so it alone clears the SUSPICIOUS threshold)
  *   Asks for money: +35
  *   Urgency checkbox: +15
  *   Wants personal info: +30
@@ -50,7 +50,7 @@ public class VerificationEngine {
         // salary check - different limits for internships vs jobs
         boolean isIntern = RuleChecker.isInternshipOffer(type, role);
         if(checkSalary(offer.getSalary(), isIntern)) {
-            totalRisk += 25;
+            totalRisk += 30;  // raised from 25: salary alone should reach SUSPICIOUS threshold
             reasons.add("Salary way too high for this role");
         }
         
