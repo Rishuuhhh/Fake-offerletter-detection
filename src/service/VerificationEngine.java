@@ -54,19 +54,24 @@ public class VerificationEngine {
             reasons.add("Salary way too high for this role");
         }
         
+        String desc = offer.getDescription();
+        boolean feeDetected = offer.hasFee() || RuleChecker.mentionsFee(desc);
+        boolean urgentDetected = urgentFlag || RuleChecker.mentionsUrgency(desc);
+        boolean personalInfoDetected = personalInfoFlag || RuleChecker.mentionsPersonalInfo(desc);
+
         // registration fee = huge red flag
-        if(offer.hasFee()) {
+        if(feeDetected) {
             totalRisk += 35;
             reasons.add("Asking for registration/security fee - major warning sign");
         }
         
-        // user-selected flags
-        if(urgentFlag) {
+        // urgency from checkbox or description
+        if(urgentDetected) {
             totalRisk += 15;
             reasons.add("Uses pressure/urgency language");
         }
         
-        if(personalInfoFlag) {
+        if(personalInfoDetected) {
             totalRisk += 30;
             reasons.add("Wants Aadhaar/OTP/bank details upfront");
         }

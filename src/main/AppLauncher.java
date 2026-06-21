@@ -2,6 +2,7 @@ package main;
 
 import auth.AuthService;
 import service.*;
+import store.DataInitializer;
 import store.FeedbackLogger;
 import store.HistoryStore;
 import store.UserStore;
@@ -14,6 +15,9 @@ import javax.swing.*;
 public class AppLauncher {
 
     public static void main(String[] args) {
+        DataInitializer.ensureDefaults();
+        RuleChecker.reload();
+
         FileStore fileStore = new FileStore();
 
         // storage
